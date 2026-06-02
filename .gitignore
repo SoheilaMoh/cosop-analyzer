@@ -17,3 +17,5 @@ outputs/
 
 # PDF data files
 data/*.pdf
+
+!data/Cambodia_COSOP.pdf
