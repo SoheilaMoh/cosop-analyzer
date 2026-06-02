@@ -5,10 +5,9 @@ COSOP Analyzer is an AI-powered interactive dashboard for extracting, validating
 This prototype was developed for the AI at IFAD Technical Challenge – Option B: COSOP-Analyzer Interactive Data Dashboard.
 
 ## Overview
-
 The application allows users to upload a text-based COSOP PDF document and extract structured information about organizations mentioned as IFAD partners. The extracted partner information is cleaned, validated, deduplicated, visualized, and made available for download as an Excel file.
 
-The prototype was primarily developed and tested using the Cambodia COSOP 2022–2027 document.
+The prototype has been tested using both the Cambodia COSOP 2022–2027 and the Indonesia COSOP documents. Partner entities are normalized and validated through a rule-based validation layer to improve consistency across different country strategies.
 
 ## Main Features
 
@@ -24,6 +23,34 @@ The prototype was primarily developed and tested using the Cambodia COSOP 2022�
 - View detailed partner profiles with roles, pages, and evidence sentences
 - Export extracted partner data to Excel
 - Cache extraction results to avoid repeated LLM calls
+
+## Screenshots
+
+### Upload and Extraction Workflow
+![Upload and Extraction Workflow](screenshots/1.png)
+
+### Dashboard Analytics
+![Dashboard Analytics](screenshots/2.png)
+
+### Partner Ranking Table
+![Partner Ranking Table](screenshots/3.png)
+
+### Partner Profile Explorer
+![Partner Profile Explorer](screenshots/4.png)
+
+### Search and Export Features
+![Search and Export Features](screenshots/5.png)
+
+### Advanced Filtering
+![Advanced Filtering](screenshots/6.png)
+
+### PDF Preview
+![PDF Preview](screenshots/7.png)
+
+### Validation Comparison
+![Validation Comparison](screenshots/8.png)
+
+
 
 ## Dashboard Components
 
@@ -118,7 +145,7 @@ Then open the local URL shown in the terminal.
 - The prototype does not perform OCR on scanned PDFs.
 - Partner relationship network analysis is not included in this version.
 - Extraction quality depends on the quality of the PDF text and the LLM response.
-- Validation rules were tuned using one main COSOP sample and may require adjustment for other countries.
+- Validation rules were tuned using two main COSOP sample and may require adjustment for other countries.
 
 ## Technical Stack
 

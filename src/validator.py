@@ -1,16 +1,47 @@
+import re
+
+
 EXCLUDED_TERMS = [
+    # Generic / non-partner entities
     "government",
+    "government of indonesia",
+    "republic of indonesia",
     "government of cambodia",
     "kingdom of cambodia",
     "royal government of cambodia",
     "gokc",
     "ifad",
     "international fund for agricultural development",
+    "cosop",
+    "country strategic opportunities programme",
+    "executive board",
+    "un resident coordinator",
+
+    # Generic groups / roles
+    "regional director",
+    "country director",
+    "regional economist",
+    "technical specialist",
+    "finance officer",
+    "project director",
+    "project manager",
+    "ministries",
+    "districts",
+    "village authorities",
+    "pmu",
+    "pmus",
+    "project management units",
+
+    # Frameworks / broad categories
     "undaf",
+    "unsdcf",
     "united nations development assistance framework",
+    "united nations sustainable development cooperation framework",
     "rome-based united nations agencies",
+    "rome-based agencies",
     "un agencies",
     "smallholders",
+    "smallholder farmers",
     "farmers",
     "producer organizations",
     "producers organisations",
@@ -18,25 +49,45 @@ EXCLUDED_TERMS = [
     "agricultural cooperative",
     "agricultural cooperatives",
     "private companies",
+    "private sector",
     "private sector coordination platform",
-    "regional director",
-    "country director",
-    "regional economist",
+    "development partners",
+    "financial institutions",
+
+    # People
     "reehana raza",
+    "ivan cossio cortez",
     "francisco pichon",
     "abdelkarim sma",
-    "camgap",
-    "cambodian good agriculture practice",
-    "ministry of agriculture and development planning commission",
+    "mylene kherallah",
+    "mark biriukov",
+
+    # Country names when extracted alone
+    "indonesia",
+    "cambodia",
     "republic of korea",
     "finland",
+    "netherlands",
+    "united kingdom",
+    "kingdom of norway",
+
+    # Other non-partner terms
     "economic intelligence unit",
     "world bank group",
     "technical working group on agriculture and water",
     "twg-aw",
+    "indonesia’s national environmental quality index",
+    "national environmental quality index",
+    "kredit usaha rakyat",
+    "secap",
+    "camgap",
+    "cambodian good agriculture practice",
+    "ministry of agriculture and development planning commission",
 ]
 
+
 PROGRAM_TERMS = [
+    # Cambodia programmes
     "asmp",
     "aspire",
     "aspire-at",
@@ -60,7 +111,32 @@ PROGRAM_TERMS = [
     "acs",
     "pos",
     "nso",
+
+    # Indonesia programmes / projects
+    "yess",
+    "tekad",
+    "readsi",
+    "upland",
+    "uplands",
+    "ipdmip",
+    "hddap",
+    "iard",
+    "copli",
+    "impli",
+    "clpe",
+    "mahfsa",
+    "rural empowerment and agricultural development scaling-up initiative",
+    "youth entrepreneurship and employment support services programme",
+    "integrated village economic transformation project",
+    "uplands agriculture productivity and markets project",
+    "integrated participatory development and management of irrigation project",
+    "horticulture development in dryland areas project",
+    "integrated agriculture regional development project",
+    "sustainable management of peatland ecosystems",
+    "integrated management of peatland landscapes",
+    "measurable action for haze-free sustainable land management",
 ]
+
 
 INVALID_PARTNER_TYPES = [
     "project",
@@ -69,7 +145,12 @@ INVALID_PARTNER_TYPES = [
     "strategy",
     "framework",
     "initiative",
+    "risk",
+    "indicator",
+    "policy",
+    "plan",
 ]
+
 
 PERSON_TITLES = [
     "director",
@@ -79,10 +160,14 @@ PERSON_TITLES = [
     "officer",
     "advisor",
     "consultant",
+    "minister",
 ]
+
 
 GENERIC_PHRASES = [
     "smallholder",
+    "small-scale producer",
+    "farmer",
     "producer organization",
     "producer organisation",
     "agriculture cooperative",
@@ -92,12 +177,36 @@ GENERIC_PHRASES = [
     "un agencies",
     "development partners",
     "financial institutions",
+    "local governments",
+    "district governments",
+    "village authorities",
 ]
 
 
+def normalize_text(text):
+    return (
+        str(text)
+        .strip()
+        .lower()
+        .replace("’", "'")
+        .replace("–", "-")
+        .replace("—", "-")
+    )
+
+
+def contains_any(text, terms):
+    text = normalize_text(text)
+    return any(term in text for term in terms)
+
+
+def is_exact_excluded_name(name):
+    key = normalize_text(name)
+    return key in [normalize_text(term) for term in EXCLUDED_TERMS]
+
+
 def normalize_partner_name(name):
-    clean_name = name.strip()
-    key = clean_name.lower()
+    clean_name = str(name).strip()
+    key = normalize_text(clean_name)
 
     # =====================
     # Multilateral / IFI partners
@@ -106,17 +215,30 @@ def normalize_partner_name(name):
     if key == "adb" or "asian development bank" in key:
         return "Asian Development Bank"
 
+    if key == "world bank" or "world bank" in key:
+        return "World Bank"
+
     if key == "eib" or "european investment bank" in key:
         return "European Investment Bank"
 
     if key == "aiib" or "asian infrastructure investment bank" in key:
         return "Asian Infrastructure Investment Bank"
 
-    if key == "world bank" or "world bank" in key:
-        return "World Bank"
+    if (
+        key == "isdb"
+        or key == "islamic development bank"
+        or "islamic development bank" in key
+    ):
+        return "Islamic Development Bank"
 
     if key == "eu" or "european union" in key:
         return "European Union"
+
+    if key == "ofid" or "opec fund" in key:
+        return "OPEC Fund"
+
+    if "food and agricultural organization" in key:
+        return "Food and Agriculture Organization of the United Nations"
 
     # =====================
     # Climate / environmental funds
@@ -145,7 +267,7 @@ def normalize_partner_name(name):
     if key == "wfp" or "world food programme" in key:
         return "World Food Programme"
 
-    if key == "un women" or "un women" in key:
+    if key in ["un women", "un-women"] or "un women" in key or "un-women" in key:
         return "UN Women"
 
     if key == "unicef" or "unicef" in key:
@@ -154,27 +276,94 @@ def normalize_partner_name(name):
     if key == "uncdf" or "united nations capital development fund" in key:
         return "United Nations Capital Development Fund"
 
+    if key == "ilo" or "international labour organization" in key:
+        return "International Labour Organization"
+
     # =====================
     # Bilateral / development partners
     # =====================
 
-    if key == "sdc" or "swiss agency for development and cooperation" in key:
-        return "Swiss Agency for Development and Cooperation"
-
     if key == "usaid" or "united states agency for international development" in key:
         return "United States Agency for International Development"
+
+    if key == "sdc" or "swiss agency for development and cooperation" in key:
+        return "Swiss Agency for Development and Cooperation"
 
     if key == "dfat" or "department of foreign affairs and trade" in key:
         return "DFAT"
 
-    if key == "afd" or "agence française de développement" in key or "agence francaise de developpement" in key:
+    if (
+        key == "afd"
+        or "agence française de développement" in key
+        or "agence francaise de developpement" in key
+    ):
         return "AFD"
 
     if key == "kfw" or "kfw" in key:
         return "KFW"
 
+    if key == "giz" or key == "gtz" or "deutsche gesellschaft" in key:
+        return "GIZ"
+
     # =====================
-    # Cambodian government / public institutions
+    # Indonesia government / public institutions
+    # =====================
+
+    if (
+        key == "bappenas"
+        or "bappenas" in key
+        or "ministry for national development planning" in key
+        or "ministry of national development planning" in key
+        or "national development planning agency" in key
+    ):
+        return "Bappenas"
+
+    if key == "mof" or "ministry of finance" in key:
+        return "Ministry of Finance"
+
+    if (
+        key == "moa"
+        or "ministry of agriculture" in key
+        or "indonesian ministry of agriculture" in key
+    ):
+        return "Ministry of Agriculture"
+
+    if (
+        key == "moef"
+        or "moef" in key
+        or "ministry of environment and forestry" in key
+        or "ministry of environment" in key
+        or "ministry of forestry" in key
+    ):
+        return "Ministry of Environment and Forestry"
+
+    if (
+        key == "mov"
+        or "ministry of villages" in key
+        or "ministry of village" in key
+        or "ministry of villages, development of disadvantaged regions and transmigration" in key
+        or "ministry of villages development of disadvantaged regions and transmigration" in key
+    ):
+        return "Ministry of Villages, Development of Disadvantaged Regions and Transmigration"
+
+    if key == "moha" or "ministry of home affairs" in key:
+        return "Ministry of Home Affairs"
+
+    if (
+        key == "ojk"
+        or "indonesia financial services authority" in key
+        or "financial services authority" in key
+    ):
+        return "Indonesia Financial Services Authority"
+
+    if key == "bi" or "bank indonesia" in key or "bank of indonesia" in key:
+        return "Bank Indonesia"
+
+    if key == "bps" or "statistics indonesia" in key:
+        return "Statistics Indonesia"
+
+    # =====================
+    # Cambodia government / public institutions
     # =====================
 
     if key == "mef" or "ministry of economy and finance" in key:
@@ -265,6 +454,13 @@ def normalize_partner_name(name):
         return "Credit Guarantee Corporation of Cambodia"
 
     # =====================
+    # ASEAN / regional bodies
+    # =====================
+
+    if key == "asean" or "association of southeast asian nations" in key:
+        return "Association of Southeast Asian Nations"
+
+    # =====================
     # Farmer / producer organizations
     # =====================
 
@@ -307,6 +503,9 @@ def normalize_partner_name(name):
     # =====================
     # Private sector / technology partners
     # =====================
+
+    if key == "mars" or key == "mars inc" or key == "mars inc." or "mars inc" in key:
+        return "Mars Inc."
 
     if key == "amru" or key == "amru rice" or "amru rice" in key:
         return "AMRU Rice"
@@ -380,8 +579,8 @@ def normalize_partner_name(name):
 
 
 def normalize_partner_type(partner_type):
-    clean_type = partner_type.strip()
-    key = clean_type.lower()
+    clean_type = str(partner_type).strip()
+    key = normalize_text(clean_type)
 
     if not key:
         return "Other"
@@ -392,7 +591,7 @@ def normalize_partner_type(partner_type):
     if "funding" in key or "co-financing" in key or "financing partner" in key:
         return "Funding Partner"
 
-    if "climate fund" in key or "fund" in key:
+    if "climate fund" in key or "environmental fund" in key or "fund" in key:
         return "Climate / Environmental Fund"
 
     if "financial institution" in key or "bank" in key or "microfinance" in key:
@@ -419,58 +618,190 @@ def normalize_partner_type(partner_type):
     if "stakeholder" in key or "working group" in key or "coordination" in key:
         return "Stakeholder / Coordination Platform"
 
-    if "development partner" in key or "international organization" in key:
+    if (
+        "development partner" in key
+        or "international organization" in key
+        or "bilateral" in key
+        or "multilateral" in key
+    ):
         return "Development Partner"
 
     return clean_type
+
+
+def infer_partner_type(partner_name, normalized_type):
+    key = normalize_text(partner_name)
+
+    if partner_name in [
+        "Asian Development Bank",
+        "Islamic Development Bank",
+        "European Union",
+        "United States Agency for International Development",
+        "Swiss Agency for Development and Cooperation",
+        "DFAT",
+        "AFD",
+        "KFW",
+        "GIZ",
+        "OPEC Fund",
+    ]:
+        return "Development Partner"
+
+    if partner_name in [
+        "World Bank",
+        "European Investment Bank",
+        "Asian Infrastructure Investment Bank",
+        "Agricultural and Rural Development Bank",
+        "SME Bank",
+        "AMK Microfinance Plc",
+        "Cambodia Microfinance Association",
+        "Credit Guarantee Corporation of Cambodia",
+        "Bank Indonesia",
+    ]:
+        return "Financial Institution"
+
+    if partner_name in [
+        "Green Climate Fund",
+        "Global Environment Fund",
+    ]:
+        return "Climate / Environmental Fund"
+
+    if partner_name in [
+        "Food and Agriculture Organization of the United Nations",
+        "United Nations Development Programme",
+        "World Food Programme",
+        "UN Women",
+        "UNICEF",
+        "United Nations Capital Development Fund",
+        "International Labour Organization",
+    ]:
+        return "UN Agency"
+
+    if partner_name in [
+        "Bappenas",
+        "Ministry of Finance",
+        "Ministry of Agriculture",
+        "Ministry of Environment and Forestry",
+        "Ministry of Villages, Development of Disadvantaged Regions and Transmigration",
+        "Ministry of Home Affairs",
+        "Indonesia Financial Services Authority",
+        "Statistics Indonesia",
+        "Ministry of Economy and Finance",
+        "Ministry of Agriculture, Forestry and Fisheries",
+        "Ministry of Water Resources and Meteorology",
+        "Ministry of Rural Development",
+        "Ministry of Commerce",
+        "Ministry of Women’s Affairs",
+        "Ministry of Industry and Handicraft",
+        "Ministry of Environment",
+        "Ministry of Planning",
+        "Ministry of Social Affairs, Veterans and Youth Rehabilitation",
+        "Council for Agriculture and Rural Development",
+        "National Committee for Sub-National Democratic Development Secretariat",
+        "Supreme National Economic Council",
+        "National Bank of Cambodia",
+        "General Department of Public Procurement",
+        "National Institute of Statistics",
+        "Cambodian Agricultural Research and Development Institute",
+    ]:
+        return "Government / Public Institution"
+
+    if partner_name in [
+        "Mars Inc.",
+        "AMRU Rice",
+        "Signature of Asia",
+        "Natural Agriculture Village",
+        "REMIC",
+        "Agribuddy",
+        "BhanJi",
+        "AngorSalad",
+        "KiU",
+        "Bronx Technology",
+        "Techo Startup Center",
+    ]:
+        return "Private Sector"
+
+    if partner_name in [
+        "Association of Southeast Asian Nations",
+        "Grow Asia",
+        "Cambodia Partnership for Sustainable Agriculture",
+        "SMILE Khmer vegetable Network",
+    ]:
+        return "Stakeholder / Coordination Platform"
+
+    if partner_name in [
+        "Farmer and Nature Net",
+        "Cambodia Farmer Federation Association of Agricultural Producers",
+        "CACC",
+    ]:
+        return "Producer / Farmer Organization"
+
+    if partner_name in [
+        "CARE Cambodia",
+        "JCI",
+        "Cambodia Indigenous Peoples Organization",
+        "SwissContact",
+        "CordAid/ICCO",
+    ]:
+        return "NGO / Civil Society"
+
+    if partner_name in [
+        "Institute of Policy and Strategy for Agriculture and Rural Development",
+        "Network for Agriculture and Rural Development Think-Tanks for Countries in Mekong Subregion",
+        "Royal University of Agriculture",
+        "Prek Leap National Institute of Agriculture",
+    ]:
+        return "Research / Academic Institution"
+
+    if partner_name in [
+        "ECOCERT",
+        "Cambodian Good Agriculture Practice",
+    ]:
+        return "Certification Body"
+
+    return normalized_type
 
 
 def validate_partners(partners):
     validated = []
 
     for partner in partners:
-        raw_name = partner.get("partner_name", "").strip()
-        raw_partner_type = partner.get("partner_type", "").strip()
+        raw_name = str(partner.get("partner_name", "")).strip()
+        raw_partner_type = str(partner.get("partner_type", "")).strip()
 
         if not raw_name:
             continue
 
         normalized_name = normalize_partner_name(raw_name)
         normalized_type = normalize_partner_type(raw_partner_type)
+        normalized_type = infer_partner_type(normalized_name, normalized_type)
 
-        name_lower = normalized_name.lower()
-        raw_name_lower = raw_name.lower()
-        partner_type_lower = normalized_type.lower()
-        raw_partner_type_lower = raw_partner_type.lower()
+        name_lower = normalize_text(normalized_name)
+        raw_name_lower = normalize_text(raw_name)
+        partner_type_lower = normalize_text(normalized_type)
+        raw_partner_type_lower = normalize_text(raw_partner_type)
 
         if raw_partner_type_lower == "individual":
             continue
 
-        if any(term in name_lower for term in EXCLUDED_TERMS):
+        if is_exact_excluded_name(normalized_name) or is_exact_excluded_name(raw_name):
             continue
 
-        if any(term in raw_name_lower for term in EXCLUDED_TERMS):
+        if contains_any(name_lower, PROGRAM_TERMS) or contains_any(raw_name_lower, PROGRAM_TERMS):
             continue
 
-        if any(term in name_lower for term in PROGRAM_TERMS):
+        if contains_any(partner_type_lower, INVALID_PARTNER_TYPES):
             continue
 
-        if any(term in raw_name_lower for term in PROGRAM_TERMS):
+        if contains_any(raw_partner_type_lower, INVALID_PARTNER_TYPES):
             continue
 
-        if any(word in partner_type_lower for word in INVALID_PARTNER_TYPES):
+        if contains_any(name_lower, INVALID_PARTNER_TYPES):
             continue
 
-        if any(word in raw_partner_type_lower for word in INVALID_PARTNER_TYPES):
+        if contains_any(name_lower, PERSON_TITLES):
             continue
 
-        if any(word in name_lower for word in INVALID_PARTNER_TYPES):
-            continue
-
-        if any(title in name_lower for title in PERSON_TITLES):
-            continue
-
-        if any(phrase in name_lower for phrase in GENERIC_PHRASES):
+        if contains_any(name_lower, GENERIC_PHRASES):
             continue
 
         partner["partner_name"] = normalized_name
@@ -485,7 +816,7 @@ def deduplicate_partners(partners):
     grouped = {}
 
     for partner in partners:
-        name = partner.get("partner_name", "").strip()
+        name = str(partner.get("partner_name", "")).strip()
 
         if not name:
             continue
@@ -504,18 +835,18 @@ def deduplicate_partners(partners):
         evidence = partner.get("evidence_sentence", "")
 
         if role:
-            grouped[name]["roles"].add(role)
+            grouped[name]["roles"].add(str(role).strip())
 
         if page:
             grouped[name]["pages"].add(page)
 
         if evidence:
-            grouped[name]["evidence_sentences"].add(evidence)
+            grouped[name]["evidence_sentences"].add(str(evidence).strip())
 
     final_results = []
 
     for item in grouped.values():
-        evidence_list = list(item["evidence_sentences"])
+        evidence_list = sorted(item["evidence_sentences"])
 
         final_results.append({
             "partner_name": item["partner_name"],
