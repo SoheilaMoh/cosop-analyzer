@@ -422,21 +422,20 @@ def render_dashboard(df, title="Partner Analytics Dashboard"):
 
 
 # =====================
-# LOAD CACHED DASHBOARD
+# LOAD INITIAL DASHBOARD STATE
 # =====================
 
-cached_df = load_cached_results(cache_path)
+if st.session_state.get("active_document_name") != document_name:
+    st.session_state["active_document_name"] = document_name
 
-if cached_df is not None:
-    render_dashboard(
-        cached_df,
-        title="Partner Analytics Dashboard"
-    )
-else:
-    st.warning(
-        "No cached GPT results found for this PDF. Run full COSOP extraction once to generate the dashboard cache."
-    )
+    cached_df = load_cached_results(cache_path)
 
+    if cached_df is not None:
+        st.session_state["dashboard_df"] = cached_df
+        st.session_state["dashboard_title"] = "Cached GPT Partner Analytics"
+    else:
+        st.session_state["dashboard_df"] = None
+        st.session_state["dashboard_title"] = None
 
 # =====================
 # GPT EXTRACTION TOOLS
@@ -514,10 +513,8 @@ if run_current_page:
     if final_results:
         current_df = pd.DataFrame(final_results)
 
-        render_dashboard(
-            current_df,
-            title=f"GPT Extraction Results - Page {selected_page}"
-        )
+        st.session_state["dashboard_df"] = current_df
+        st.session_state["dashboard_title"] = f"GPT Extraction Results - Page {selected_page}"
     else:
         st.warning("No structured partners extracted from this page.")
 
@@ -535,10 +532,8 @@ if run_first_10:
             f"Completed! Final partners found: {len(first_10_df)}"
         )
 
-        render_dashboard(
-            first_10_df,
-            title="GPT Extraction Results - First 10 Pages"
-        )
+        st.session_state["dashboard_df"] = first_10_df
+        st.session_state["dashboard_title"] = "GPT Extraction Results - First 10 Pages"
     else:
         st.warning("No structured partners extracted from the first 10 pages.")
 
@@ -561,14 +556,24 @@ if run_entire_cosop:
             f"Full COSOP extraction completed! Final partners found: {len(full_gpt_df)}"
         )
 
-        render_dashboard(
-            full_gpt_df,
-            title="GPT Extraction Results - Entire COSOP"
-        )
+        st.session_state["dashboard_df"] = full_gpt_df
+        st.session_state["dashboard_title"] = "GPT Extraction Results - Entire COSOP"
     else:
         st.warning("No structured partners extracted from the full COSOP.")
 
+# =====================
+# ACTIVE DASHBOARD
+# =====================
 
+if st.session_state.get("dashboard_df") is not None:
+    render_dashboard(
+        st.session_state["dashboard_df"],
+        title=st.session_state["dashboard_title"]
+    )
+else:
+    st.warning(
+        "No cached GPT results found for this PDF. Run full COSOP extraction once to generate the dashboard."
+    )
 # =====================
 # PDF PAGE PREVIEW
 # =====================
