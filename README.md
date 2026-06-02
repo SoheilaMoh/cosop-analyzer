@@ -27,28 +27,28 @@ The prototype has been tested using both the Cambodia COSOP 2022–2027 and the 
 ## Screenshots
 
 ### Upload and Extraction Workflow
-![Upload and Extraction Workflow](screenshots/upload-workflow.png)
+![Upload and Extraction Workflow](screenshots/1.png)
 
 ### Dashboard Analytics
-![Dashboard Analytics](screenshots/dashboard-analytics.png)
+![Dashboard Analytics](screenshots/2.png)
 
 ### Partner Ranking Table
-![Partner Ranking Table](screenshots/partner-ranking-table.png)
+![Partner Ranking Table](screenshots/3.png)
 
 ### Partner Profile Explorer
-![Partner Profile Explorer](screenshots/partner-profile-explorer.png)
+![Partner Profile Explorer](screenshots/4.png)
 
 ### Search and Export Features
-![Search and Export Features](screenshots/search-and-export.png)
+![Search and Export Features](screenshots/5.png)
 
 ### Advanced Filtering
-![Advanced Filtering](screenshots/advanced-filtering.png)
+![Advanced Filtering](screenshots/6.png)
 
 ### PDF Preview
-![PDF Preview](screenshots/pdf-preview.png)
+![PDF Preview](screenshots/7.png)
 
 ### Validation Comparison
-![Validation Comparison](screenshots/validation-comparison.png)
+![Validation Comparison](screenshots/8.png)
 
 
 
